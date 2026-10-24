@@ -11,6 +11,7 @@ export default async function productRoutes(fastify) {
       let name,
         price,
         description,
+        stock,
         imageBuffer = null;
 
       for await (const part of parts) {
@@ -20,11 +21,20 @@ export default async function productRoutes(fastify) {
           if (part.fieldname === "name") name = part.value;
           if (part.fieldname === "price") price = Number(part.value);
           if (part.fieldname === "description") description = part.value;
+          if (part.fieldname === "stock") stock = Number(part.value);
         }
       }
 
-      if (!name || !price) {
-        return reply.code(400).send({ message: "Name and price required" });
+      if (!name?.trim() || !Number.isFinite(price) || price <= 0) {
+        return reply.code(400).send({
+          message: "Valid name and positive price required",
+        });
+      }
+
+      if (stock === undefined || !Number.isInteger(stock) || stock < 0) {
+        return reply.code(400).send({
+          message: "Stock must be a non-negative integer",
+        });
       }
       const shopId = new ObjectId(req.user.shopId);
       if (!shopId) {
@@ -37,6 +47,7 @@ export default async function productRoutes(fastify) {
         price,
         description: description || "",
         image,
+        stock,
         shopId,
         createdAt: new Date(),
       });
@@ -79,6 +90,7 @@ export default async function productRoutes(fastify) {
       const parts = req.parts();
       let name,
         price,
+        stock,
         description,
         imageBuffer = null;
 
@@ -89,20 +101,22 @@ export default async function productRoutes(fastify) {
           if (part.fieldname === "name") name = part.value;
           if (part.fieldname === "price") price = Number(part.value);
           if (part.fieldname === "description") description = part.value;
+          if(part.fieldname === "stock") stock = Number(part.value)
         }
       }
 
       const shopId = new ObjectId(req.user.shopId);
 
-       const updateData = {
-      name,
-      price,
-      description,
-    };
+      const updateData = {
+        name,
+        price,
+        stock,
+        description,
+      };
 
-    if (imageBuffer) {
-      updateData.image = imageBuffer.toString("base64");
-    }
+      if (imageBuffer) {
+        updateData.image = imageBuffer.toString("base64");
+      }
 
       const result = await db.collection("products").updateOne(
         {

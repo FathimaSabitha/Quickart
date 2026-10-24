@@ -14,11 +14,6 @@ export default async function registerRoute(fastify) {
   if (existing) {
     return reply.code(400).send({ message: "Username already exists" });
   }
-
-    if (!password) {
-      return reply.code(400).send({ message: "Password required" });
-    }
-
     const passwordHash = await bcrypt.hash(password, 10);
 
     const shop = await db.collection("shops").insertOne({

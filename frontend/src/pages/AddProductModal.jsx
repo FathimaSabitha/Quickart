@@ -1,127 +1,178 @@
 import { useState, useEffect } from "react";
 
-
 export default function AddProductModal({
   isOpen,
   onClose,
   onSubmit,
   product,
 }) {
-  const [name, setName] = useState(product?.name || "");
-  const [disc, setDisc] = useState(product?.description || "");
-  const [price, setPrice] = useState(product?.price || "");
+  const [name, setName] = useState("");
+  const [disc, setDisc] = useState("");
+  const [price, setPrice] = useState("");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [stock, setStock] = useState(product?.stock ?? 0);
+
+  
 
   useEffect(() => {
-    if (product) {
-      setName(product.name || "");
-      setDisc(product.description || "");
-      setPrice(product.price || "");
-      setPreview(
-        product.image ? `data:image/jpeg;base64,${product.image}` : "",
-      );
-    }
+    if (!isOpen) return;
+
+    setName(product?.name || "");
+    setDisc(product?.description || "");
+    setPrice(product?.price ?? "");
+    setStock(product?.stock ?? 0);
+    setImage(null);
+    setError("");
+
+    setPreview(product?.image ? `data:image/jpeg;base64,${product.image}` : "");
   }, [product, isOpen]);
+
+  useEffect(() => {
+    if (!image) return;
+
+    const objectUrl = URL.createObjectURL(image);
+    setPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [image]);
 
   if (!isOpen) return null;
 
-  const handleImage = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
 
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-  };
+    if (!name.trim()) {
+      setError("Please enter a product name.");
+      return;
+    }
 
-  const handleSubmit = () => {
-    if (!name || !price) return;
+    if (price === "" || !Number.isFinite(Number(price)) || Number(price) < 0) {
+      setError("Please enter a valid price.");
+      return;
+    }
 
     const formData = new FormData();
-    formData.append("name", name);
+    formData.append("name", name.trim());
     formData.append("price", price);
-    formData.append("description", disc);
+    formData.append("description", disc.trim());
+    formData.append("stock", stock);
 
     if (image) {
       formData.append("image", image);
     }
 
-    onSubmit(formData);
-    reset();
+    try {
+      setSaving(true);
+      await onSubmit(formData);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Failed to save product.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const reset = () => {
-    setName("");
-    setPrice("");
-    setDisc("");
-    setImage(null);
-    setPreview("");
-    onClose();
-  };
+  
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-        <h2 className="text-lg font-semibold mb-4">Add Product</h2>
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
+      >
+        <h2 className="text-lg font-semibold mb-4">
+          {product ? "Edit Product" : "Add Product"}
+        </h2>
 
-        {/* Image Upload */}
-        <div className="mb-4">
-          <label className="block mb-2 text-sm text-gray-500">
-            Product Image
-          </label>
+        <label className="block mb-2 text-sm text-gray-500">
+          Product Image
+        </label>
 
-          <input type="file" accept="image/*" onChange={handleImage} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            setImage(e.target.files?.[0] || null);
+          }}
+          className="mb-3 w-full"
+        />
 
-          {preview && (
-            <img
-              src={preview}
-              alt="preview"
-              className="mt-3 w-full h-40 object-cover rounded-xl"
-            />
-          )}
-        </div>
+        {preview && (
+          <img
+            src={preview}
+            alt="Product preview"
+            className="mb-4 w-full h-40 object-cover rounded-xl"
+          />
+        )}
 
-        {/* Name */}
         <input
           type="text"
           placeholder="Product name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full mb-3 px-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full mb-3 px-4 py-2 rounded-xl border"
+          required
         />
-        <input
-          type="text"
+
+        <textarea
           placeholder="Description"
           value={disc}
           onChange={(e) => setDisc(e.target.value)}
-          className="w-full mb-3 px-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black"
-        />
-        {/* Price */}
-        <input
-          type="number"
-          placeholder="Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="w-full mb-4 px-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full mb-3 px-4 py-2 rounded-xl border"
+          rows={3}
         />
 
-        {/* Buttons */}
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="Price (₹)"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className="w-full mb-4 px-4 py-2 rounded-xl border"
+          required
+        />
+
+        <input
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Available stock"
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+          className="w-full mb-4 px-4 py-2 rounded-xl border"
+          required
+        />
+
+        {error && (
+          <p role="alert" className="text-sm text-red-600 mb-3">
+            {error}
+          </p>
+        )}
+
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             onClick={onClose}
+            disabled={saving}
             className="px-4 py-2 rounded-xl bg-gray-100"
           >
             Cancel
           </button>
 
           <button
-            onClick={handleSubmit}
-            className="px-4 py-2 rounded-xl bg-black text-white"
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-50"
           >
-            Add
+            {saving ? "Saving..." : product ? "Save Changes" : "Add Product"}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

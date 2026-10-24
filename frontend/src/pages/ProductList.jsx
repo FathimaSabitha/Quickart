@@ -81,20 +81,20 @@ export default function ProductList() {
             <p className="font-semibold text-gray-900 line-clamp-1">{p.name}</p>
 
             <p className="text-lg font-bold text-black mt-1">₹{p.price}</p>
-
+            <p className="text-lg font-bold text-emerald-600 ml-auto text-right">{p.stock}</p>
             <button
               onClick={() => {
                 setSelectedProduct(p);
                 setOpen(true);
               }}
-              className="mt-4 w-full border border-red-200 text-red-500 py-2 rounded-lg hover:bg-red-50 transition text-sm font-medium"
+              className="mt-4 w-full border border-black-200 text-black-500 py-2 rounded-lg hover:bg-red-50 transition text-sm font-medium"
             >
               Edit
             </button>
 
             <button
               onClick={() => deleteMutation.mutate(p._id)}
-              className="mt-4 w-full border border-red-200 text-red-500 py-2 rounded-lg hover:bg-red-50 transition text-sm font-medium"
+              className="mt-4 w-full border border-black-200 text-black-500 py-2 rounded-lg hover:bg-red-50 transition text-sm font-medium"
             >
               Delete
             </button>

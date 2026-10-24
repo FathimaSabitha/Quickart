@@ -7,7 +7,6 @@ import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 
 const app = fastify();
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
 app.register(jwt, {
   secret: process.env.JWT_SECRET,
